@@ -2,6 +2,8 @@
 
 arXiv API behavior worth knowing:
 - Documented courtesy: ≥3 seconds between requests.
+- Empirically, arXiv may 429 even at 3s if many sustained requests; client
+  defaults raised to 5s and includes exponential-backoff retry on 429/503.
 - Single query max_results capped at 2000; pagination via `start`.
 - `submittedDate:[YYYYMMDDHHMM TO YYYYMMDDHHMM]` filters by v1 submission.
 - Sort by `submittedDate ascending` keeps pagination stable across days.
@@ -11,6 +13,7 @@ arXiv API behavior worth knowing:
 from __future__ import annotations
 
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -67,14 +70,31 @@ class ArxivClient:
         if elapsed < self.rate_limit:
             time.sleep(self.rate_limit - elapsed)
 
-    def _fetch(self, params: dict[str, str]) -> bytes:
-        self._wait()
+    def _fetch(self, params: dict[str, str], max_retries: int = 6) -> bytes:
         url = f"{ARXIV_API_BASE}?{urllib.parse.urlencode(params)}"
-        req = urllib.request.Request(url, headers={"User-Agent": "scientific-idea-fitness-pilot/0.1 (research)"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = resp.read()
-        self._last_request_time = time.monotonic()
-        return data
+        backoff = 10.0
+        for attempt in range(max_retries):
+            self._wait()
+            req = urllib.request.Request(url, headers={"User-Agent": "scientific-idea-fitness-pilot/0.1 (research)"})
+            try:
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    data = resp.read()
+                self._last_request_time = time.monotonic()
+                return data
+            except urllib.error.HTTPError as e:
+                self._last_request_time = time.monotonic()
+                if e.code in (429, 503):
+                    print(f"[retry] arXiv {e.code} on attempt {attempt + 1}, sleeping {backoff:.0f}s", flush=True)
+                    time.sleep(backoff)
+                    backoff = min(backoff * 2, 300)
+                    continue
+                raise
+            except (urllib.error.URLError, TimeoutError) as e:
+                self._last_request_time = time.monotonic()
+                print(f"[retry] arXiv network error on attempt {attempt + 1} ({e}), sleeping {backoff:.0f}s", flush=True)
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 300)
+        raise RuntimeError(f"arXiv: max retries exceeded for params {params}")
 
     def search(
         self,

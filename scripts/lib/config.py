@@ -17,7 +17,7 @@ PREDICTIONS_DIR = REPO_ROOT / "predictions"
 ANALYSIS_DIR = REPO_ROOT / "analysis"
 
 ARXIV_API_BASE = "http://export.arxiv.org/api/query"
-ARXIV_RATE_LIMIT_SECONDS = 3.0
+ARXIV_RATE_LIMIT_SECONDS = 5.0  # documented courtesy is 3s; raised to 5 after empirical 429s
 ARXIV_PAGE_SIZE = 1000
 
 S2_API_BASE = "https://api.semanticscholar.org/graph/v1"
