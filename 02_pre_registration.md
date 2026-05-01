@@ -1,10 +1,27 @@
 # Pre-Registration: Retrodictive Calibration Pilot
 
-**Status:** v1.0 — final, ready for hash-lock (2026-05-01)
-**Hash-lock:** to be recorded in `HASH.md` after this commit
+**Status:** v1.1 — pre-data revision of v1.0 (2026-05-01)
+**Hash-lock:** recorded in `HASH.md`
 **Pre-registered author:** Theodor Spiro (tspiro@vaika.org)
 **Reviewer commitment:** results published regardless of direction (positive, null, or negative)
 **Stage:** Pilot 1A specified in full; Pilot 1B contingent on 1A success criterion (see §11)
+**Version history:** v1.0 hash-locked at git tag `prereg-v1.0` (commit 613c0be); revisions documented in `CHANGELOG.md`
+
+---
+
+## 0. Revision policy
+
+This pre-registration may be revised only under all of the following conditions:
+
+1. **No data has been collected since the prior version.** Once data collection begins, the pre-registration is fully locked; subsequent design changes become deviations (`DEVIATIONS.md` per §9), not revisions.
+2. **The revision corrects a factual error or clarifies ambiguity, not a strategic adjustment.** Changes motivated by reasoning about expected outcomes are forbidden; changes correcting a misstated fact, an underspecified protocol, or a discovered impossibility are permitted.
+3. **The prior version remains in git history with its original hash, ots stamp, and tag.** Older versions are never deleted or rewritten; they remain independently verifiable artifacts.
+4. **The new version atomically replaces the prior in the working file (`02_pre_registration.md`), with new SHA-256 hash, new OpenTimestamps proof, and new tag (`prereg-v1.x`).**
+5. **`CHANGELOG.md` documents the transition with a dated entry, the rationale, and an explicit attestation that no data has been collected.**
+
+This policy is itself part of the pre-registration: any future revision must conform to it or openly violate it (a violation would be a major credibility failure documented in the writeup). The policy makes the discipline enforceable by structure rather than by intent.
+
+The discipline pre-registration enforces is against post-hoc adjustment under pressure of seen data. Pre-data factual correction is not the failure mode pre-registration exists to prevent; insisting on strict immutability against pre-data error correction would be cargo-cult discipline rather than substantive epistemic safeguarding.
 
 ---
 
@@ -125,11 +142,15 @@ If primary result holds across all three, robustness is strong. If it holds only
 
 **Pilot 1A models (gate-decision corpus):**
 - `claude-opus-4-7` (current frontier) — primary judge
-- **Pythia 6.9B** — contamination control. Trained on the Pile, which is overwhelmingly pre-2020 content. Gives a lower-bound on what pure-semantic discrimination is achievable without exposure to the 2020-2022 papers themselves.
+- **`EleutherAI/pythia-6.9b-deduped`** (revision: `main` branch == `step143000`) — contamination control. Trained on The Pile (deduplicated variant). The Pile's arXiv subset was constructed from the **July 2020 arXiv dump** ([Gao et al. 2020 / Pile paper](https://arxiv.org/abs/2101.00027); [Biderman et al. 2022 / Pile datasheet](https://arxiv.org/abs/2201.07311)), so papers submitted on or after **2020-08-01** are temporally clean of direct arXiv inclusion in Pythia's training data. The deduplicated variant is preferred over the non-deduped to reduce verbatim memorization confound; it shares the same temporal cutoff. Apache 2.0 license.
 
 **Pilot 1B additional models (if 1A passes gate):**
 - `claude-sonnet-4-6` (mid-tier, scaling check)
-- **GPT-2 1.5B** — strict pre-2020 cutoff floor reference. Much weaker model overall, but cleanest temporal-cutoff guarantee. If even GPT-2 shows above-baseline discrimination, that strongly bounds contamination as the explanation.
+- **`openai-community/gpt2-xl` (1.5B)** — strict pre-2020 cutoff floor reference. WebText training data has Reddit-link cutoff December 2017, scrape cutoff approximately 2018. Much weaker model overall, but cleanest temporal-cutoff guarantee for the entire 2020-2022 corpus. If even GPT-2 shows above-baseline discrimination, that strongly bounds contamination as the explanation.
+
+**Subset restriction for Pythia comparison.** Because the Pile arXiv subset cuts off at the July 2020 dump, Pythia's training data overlaps the first ~7 months of our 2020-01-01 to 2022-12-31 corpus. Any analysis involving the Pythia arm therefore uses the **Pythia-eligible subset**: papers with arXiv v1 submission date ≥ 2020-08-01. This drops approximately 19% of the NLP corpus (~95 papers from 500), leaving ~405 for the Pythia comparison. Frontier-model analyses (Opus-only, and frontier vs. baseline) use the full 500-paper corpus — frontier models' training cutoffs are post-2022 and thus not subject to the same contamination concern (Opus has potentially seen all 2020-2022 papers; this contamination affects the test as discussed below, but it is uniform across the corpus rather than time-asymmetric, so subset restriction does not address it).
+
+**Secondary contamination via Pile-CC and OpenWebText2.** Even after 2020-08-01, papers heavily discussed on the web before the full Pile freeze (late 2020) could leak into Pythia's training via the Common Crawl and OpenWebText2 components. This is bounded by reporting Pythia performance stratified by submission month and looking for a discontinuity at the 2020-08-01 cutoff. If Pythia performance on Aug-Dec 2020 papers differs sharply from 2021-2022 papers in the same direction as the contamination hypothesis predicts, we treat the leakage as material; otherwise, we report it as small.
 
 **Acknowledged confound on contamination control.** Pythia 6.9B is significantly weaker than `claude-opus-4-7` in general capability. If Pythia discriminates poorly while Opus discriminates well, the gap could reflect either (a) contamination of Opus, or (b) Pythia's weaker general capability even on uncontaminated tasks. We cannot cleanly disentangle these. The contamination control is therefore a *bounding* test, not a clean isolation: if Pythia's discrimination is roughly comparable to Opus's, contamination is unlikely to be the main driver. If Pythia is much worse, contamination remains plausible but not proven. We report this honestly in the writeup.
 
@@ -152,17 +173,53 @@ Exact prompt text (including system prompt) frozen in `prompts/v1.txt` ... `prom
 - Random seed (where supported): 0
 
 ### 4.4 Score extraction
-For V1: parsed integer. For V2: weighted average of (a, b, c, d) with weights (0.25, 0.25, 0.25, 0.25); also retain (d) alone. For V3: parsed final integer. For V4: mean of confidence ratings, weighted by 1 (uniform).
+
+**Frontier-model arm (Opus, Sonnet — generation protocol).** For V1: parsed integer. For V2: weighted average of (a, b, c, d) with weights (0.25, 0.25, 0.25, 0.25); also retain (d) alone. For V3: parsed final integer. For V4: mean of confidence ratings, weighted by 1 (uniform). Outputs that fail to parse after lenient regex (extracting first 1-10 integer in expected position) are flagged as "unparseable" and discarded symmetrically across all models in the same comparison; rate of unparseables reported.
+
+**Contamination-control arm (Pythia 6.9B-deduped, GPT-2 1.5B — log-likelihood protocol).** Base models without instruction-tuning are unreliable at producing structured generated output. To eliminate the format-failure confound from the contamination test, score is computed directly from token log-probabilities rather than by parsing generated text:
+
+For each rating position (V2 dimensions a, b, c, d), the prompt is constructed up to and including the dimension prefix (e.g., `"...(d) overall promise: "`), then for each candidate rating *k* ∈ {1, 2, ..., 10}, compute P(`str(k)` | prompt) using the model's forward pass. The argmax-*k* is taken as the predicted rating.
+
+**Pseudocode (binding specification):**
+
+```
+def score_dimension(model, tokenizer, prompt: str, dim_label: str) -> int:
+    # prompt = full V2 prompt up to and including "(<dim_label>): "
+    base_ids = tokenizer.encode(prompt, add_special_tokens=False)
+    log_probs = {}
+    for k in range(1, 11):
+        candidate_ids = tokenizer.encode(str(k), add_special_tokens=False)
+        # Chain rule over candidate token sequence:
+        #   log P(c_1, c_2, ..., c_n | prompt)
+        #   = sum_i log P(c_i | prompt + c_1..c_{i-1})
+        log_p = 0.0
+        ctx_ids = base_ids[:]
+        for tok_id in candidate_ids:
+            logits = model(ctx_ids).logits[-1]          # next-token logits
+            log_p += log_softmax(logits)[tok_id]
+            ctx_ids = ctx_ids + [tok_id]
+        log_probs[k] = log_p
+    return argmax(log_probs)                            # predicted rating in {1..10}
+```
+
+Tokenization is verified at launch via `tokenizer.encode()` for each k ∈ {1,...,10}; the verification result (which k are single-token, which are multi-token) and the exact tokenizer revision SHA are recorded in `REPRODUCE.md` before any data is collected. The pseudocode above handles both cases uniformly via the chain rule, so single-token vs multi-token does not change the protocol — it only affects compute cost.
+
+**Why log-likelihood for the contamination arm.** This protocol (a) sidesteps Pythia's instruction-following weakness entirely, (b) matches the standard evaluation protocol in the Pythia paper itself, (c) produces deterministic integer ratings with no parse failures, and (d) preserves the parity of the discrimination test — both arms produce a 1-10 integer per dimension, both are normalized to ranks before computing Spearman ρ, and the test is rank-based throughout. Justifications (the "briefly justify each" portion of V2) are not required from the contamination arm; they are not load-bearing for the discrimination test, and asking a base model to produce them invites the format-failure mode the protocol is designed to avoid.
+
+**Asymmetry acknowledgment and scale-comparability.** This is a meaningful protocol asymmetry between arms (frontier = generation, contamination = log-likelihood). The two protocols produce nominally on the same 1–10 scale but via different elicitation mechanisms, so the *distributions* of scores are not directly comparable in absolute terms — Pythia's argmax-from-logits and Opus's free-form generation will not in general yield the same calibration even on identical inputs. Two consequences:
+
+1. **Primary success criterion (§5.1) is robust to this asymmetry.** Spearman ρ depends only on within-arm rank order, not absolute calibration. The Opus arm primary test compares Opus ρ vs. citation-velocity baseline ρ — Pythia is not in this comparison at all. Subset restriction does not affect §5.1.
+2. **Cross-arm comparisons in §5.2 (items 4, 5, 5a) are bounded by the asymmetry.** The Opus-vs-Pythia gap (§5.2 #4) confounds protocol choice with model capability and contamination. Mitigation: Pilot 1B includes a `claude-sonnet-4-6` log-likelihood-scored variant on the Pythia-eligible subset, so the Opus-vs-Sonnet gap (both via generation) and the Sonnet-via-generation-vs-Sonnet-via-log-likelihood gap can be computed separately. If protocol choice explains a substantial portion of the Opus-Pythia gap, that effect is visible in the Sonnet within-model comparison and the Opus-Pythia gap is interpreted accordingly. Calibration analyses on absolute scores (§5.2 #2 reliability diagram) are computed within-arm only — no cross-arm calibration is reported.
 
 **Pre-specified primary score:** V2 (overall promise rating, dimension (d)) from `claude-opus-4-7`. All others are secondary.
 
 ### 4.5 Total inference scope
 
-**Pilot 1A (gate decision):** 500 NLP papers × 1 prompt (V2) × 2 models (Opus, Pythia 6.9B) = 1,000 inferences. Estimated cost: ~$150 (Opus dominant; Pythia run locally or on cheap inference).
+**Pilot 1A (gate decision):** 500 NLP papers for Opus arm (V2 generation) + ~405 papers for Pythia arm (V2 log-likelihood, restricted to Pythia-eligible subset per §4.1) = ~905 inferences. Estimated cost: **~$10-15 total** — Opus dominant via API (~$5-10 for ~500 inferences with V2 prompt), Pythia via Hugging Face Inference Endpoints A10G (on-demand spin-up, run, tear down: ~$1-2; minimum 1-hour billed; revision SHA pinned for reproducibility).
 
-**Pilot 1B (contingent on 1A passing):** additional 1,000 papers (CV + RL, 500 each) × 4 prompts × 4 models = 16,000 additional inferences. Plus author-unblinding sub-experiment (§5.2 item 6) on 100 papers. Estimated additional cost: $400-600.
+**Pilot 1B (contingent on 1A passing):** additional 1,000 papers (CV + RL, 500 each) × 4 prompts × 4 models (subject to log-likelihood protocol restriction for base-model arms) ≈ 12,000-16,000 additional inferences depending on which arms run on which subsets. Plus author-unblinding sub-experiment (§5.2 item 9) on 100 papers. Estimated additional cost: $30-60.
 
-Total if both stages run: ~17,000 inferences, ~$550-750. If 1A fails gate, project stops at ~$150.
+Total if both stages run: **~$50 worst case**. If 1A fails gate, project stops at ~$15. (Cost estimate revised downward from prior version after switching Pythia to Hugging Face Inference Endpoints from ad-hoc local inference; see CHANGELOG.md.)
 
 ---
 
@@ -191,8 +248,20 @@ All reported regardless of primary outcome.
 1. **AUC for top-30% vs. bottom-30%** dichotomization, with same baseline-relative threshold (AUC_LLM − AUC_baseline ≥ 0.05, paired DeLong CI excludes zero). For interpretability.
 2. **Calibration:** reliability diagram and Brier score for V2-overall as a probability proxy.
 3. **Original (transmission-weighted) impact formula** (§3.1 sensitivity formula) as alternative target. Test: ρ_LLM − ρ_baseline on this target. *Hypothesis: gap is smaller against transmission-weighted target, since baseline (citation velocity) is itself a pure transmission signal and so its predictive ceiling rises against transmission-aligned targets. If LLM gap *narrows* against transmission-weighted target, this is evidence the LLM's signal goes beyond pure transmission-correlation.*
-4. **Pythia vs. Opus discrimination gap.** ρ_Opus − ρ_Pythia. Stratify by paper fame (high/low citation percentile) — if gap concentrates in high-fame papers, contamination plausible; if uniform, capability gap more likely (§4.1).
-5. **Inter-model disagreement signal.** Does |Opus − Pythia| score correlate with impact independently of mean? Tests whether disagreement itself carries information about idea novelty/risk.
+4. **Pythia vs. Opus discrimination gap.** ρ_Opus − ρ_Pythia, computed on the **Pythia-eligible subset** (papers with arXiv v1 submission ≥ 2020-08-01; ~405 papers, see §4.1). Stratify by paper fame (high/low citation percentile) — if gap concentrates in high-fame papers, contamination plausible; if uniform, capability gap more likely (§4.1).
+5. **Inter-model disagreement signal.** Does |Opus − Pythia| score correlate with impact independently of mean? Tests whether disagreement itself carries information about idea novelty/risk. Computed on the Pythia-eligible subset.
+5a. **Pile-cutoff discontinuity test.** Tests whether secondary contamination via Pile-CC / OpenWebText2 (web crawl components of The Pile, frozen late 2020) materially leaks 2020 papers into Pythia's training despite the arXiv subset cutoff at July 2020.
+
+   - **Strata:** within the Pythia-eligible subset (arXiv v1 ≥ 2020-08-01), partition into S₁ = Aug-Dec 2020 papers (n ≈ 70-80 in NLP), S₂ = 2021-2022 papers (n ≈ 320-340 in NLP).
+   - **Test statistic:** Δρ = ρ_Pythia(S₁) − ρ_Pythia(S₂), where each ρ is Spearman ρ between Pythia score and composite Impact within the stratum.
+   - **Null hypothesis (H0_5a):** Δρ = 0 (no contamination-induced performance differential between strata).
+   - **Alternative (H1_5a, contamination-direction):** Δρ > 0 (Pythia performs better on the contamination-suspect stratum S₁ than on the clean stratum S₂, consistent with secondary leakage giving Pythia an unfair advantage on Aug-Dec 2020 papers).
+   - **Inference procedure:** 10,000 paired bootstrap resamples (papers within strata resampled with replacement); report point estimate Δρ, bootstrapped 95% CI of Δρ, and one-sided bootstrap p-value for H1_5a.
+   - **Decision rule (trichotomy):**
+     - **Material contamination:** Δρ ≥ 0.05 AND lower bound of 95% CI > 0. Pythia-arm results on Aug-Dec 2020 papers withheld from cross-arm comparisons; only 2021-2022 stratum used in §5.2 #4 and #5.
+     - **Inconclusive:** 0.02 ≤ Δρ < 0.05 OR 95% CI overlaps zero. Pythia results on the full Pythia-eligible subset reported with explicit caveat that secondary contamination effect cannot be bounded as small; this caveat propagates to interpretation of §5.2 #4 (Pythia vs. Opus gap may include contamination component).
+     - **Bounded as small:** |Δρ| < 0.02 AND 95% CI width < 0.10. Secondary contamination treated as not material; Pythia results on full Pythia-eligible subset interpreted at face value.
+   - **Power note:** with n₁ ≈ 75 and n₂ ≈ 330, this test has limited power against small effects (Δρ ≈ 0.03-0.05 detection threshold roughly). A null result therefore bounds secondary leakage as small but cannot rule it out entirely. Acknowledged as a sensitivity test, not a definitive contamination check.
 
 **Pilot 1B-only secondary analyses (run only if 1A passes gate):**
 
@@ -215,7 +284,8 @@ Acknowledged sources of bias, with attempted mitigations:
 
 | Source | Mitigation | Residual risk |
 |---|---|---|
-| LLM saw paper in training | Pythia 6.9B contamination control (1A); GPT-2 floor (1B); fame-stratified analysis (§5.2 #4) | Cannot cleanly isolate from capability gap; bounded only |
+| LLM saw paper in training | Pythia 6.9B-deduped contamination control (1A); GPT-2 1.5B floor (1B); fame-stratified analysis (§5.2 #4) | Cannot cleanly isolate from capability gap; bounded only |
+| Pile arXiv subset cutoff at July 2020 dump (Gao et al. 2020; Biderman et al. 2022) means Pythia training overlaps Jan–Jul 2020 papers in our corpus | Pythia analyses restricted to **Pythia-eligible subset** (arXiv v1 ≥ 2020-08-01), §4.1; secondary contamination via Pile-CC/OpenWebText2 tested via Pile-cutoff discontinuity test (§5.2 #5a) | Direct arXiv path eliminated for Pythia subset; secondary web-crawl path bounded but not eliminated |
 | Citation count tracks prestige not quality | Flipped composite formula de-emphasizing citations to 25%; sensitivity test against original transmission-weighted formula (§5.2 #3) | Real but bounded |
 | Stratified sampling distorts base rates | Disclosed; primary metric is rank-based (Spearman ρ) | None for ρ |
 | Prompt sensitivity | V2 pre-specified for primary; V1/V3/V4 in 1B for sensitivity | Low |
@@ -257,13 +327,14 @@ Any deviation from this pre-registration must be:
 
 ## 10. Hash-lock procedure
 
-Once §1–11 are finalized:
+For each version (v1.0, v1.1, ...):
 1. Generate SHA-256 of this file: `shasum -a 256 02_pre_registration.md`
 2. Record the hash and UTC timestamp in `HASH.md`
-3. Commit to git; tag the commit `prereg-v1.0`
-4. Optional: post hash to a public timestamping service (OpenTimestamps) for third-party verifiability
+3. OpenTimestamps stamp: `ots stamp 02_pre_registration.md` and commit `02_pre_registration.md.ots`
+4. Commit to git; tag the commit `prereg-v1.x`
+5. Push to public remote (independent timestamp via host platform)
 
-After hash-lock, this file is immutable. Any changes go to `02_pre_registration_v1.1.md` etc., with deviations also in `DEVIATIONS.md`.
+After hash-lock, this file is immutable for the locked version. Subsequent revisions follow §0 (Revision policy) — they atomically replace the working file and produce a new versioned hash, ots stamp, and tag, while the prior version remains in git history under its original tag. Once data collection begins, the file is fully locked and any subsequent design change becomes a deviation (§9, `DEVIATIONS.md`).
 
 ---
 
@@ -275,9 +346,9 @@ The pilot is split into two stages with a hard gate between them, to bound resou
 
 **Scope:**
 - Subfield: NLP (`cs.CL`) only
-- Corpus: 500 papers (stratified per §2.3)
+- Corpus: 500 papers for Opus arm (stratified per §2.3); ~405 papers for Pythia arm (Pythia-eligible subset, arXiv v1 ≥ 2020-08-01, per §4.1)
 - Prompt: V2 only (structured)
-- Models: `claude-opus-4-7` + Pythia 6.9B
+- Models: `claude-opus-4-7` (generation) + `EleutherAI/pythia-6.9b-deduped` (log-likelihood scoring, §4.4)
 - Outcome formula: primary flipped composite (§3.1)
 - No author-unblinding sub-experiment
 
