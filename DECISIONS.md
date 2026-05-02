@@ -58,6 +58,8 @@ Entries are append-only. Each entry records: the moment, what was initially prop
 
 **Update (2026-05-01, post-research):** the "Pile cutoff approximately late 2019/early 2020" characterization in this entry was wrong. Verified via Pile paper and datasheet that arXiv subset cutoff is the **July 2020 dump**. This factual error propagated into pre-registration v1.0 §4.1 and was the trigger for the v1.0 → v1.1 revision. See D-005 below.
 
+**Update (2026-05-02, post-Phase-1 + post-citation re-pull):** Impact_scored_500.jsonl recomputed using the citations file re-pulled with citingPaper.publicationDate (added for citation-velocity baseline computation §5.1.A). New ρ values vs. v1.2-cited values: ρ(Impact_primary, citations) 0.865 → 0.8611 (Δ=0.0039); ρ(Impact_sensitivity, citations) 0.964 → 0.9639 (Δ=0.0001); Δρ between formulas 0.099 → 0.1028 (Δ=0.0038). All shifts well below the pre-specified 0.02 cosmetic threshold. New Impact ground truth used for Phase 2 tests is now internally consistent with the citations file used for the citation-velocity baseline (eliminates data-vintage inconsistency between Impact target and baseline predictor).
+
 ---
 
 ## D-005 — Handling of factual error discovered in v1.0 pre-registration (2026-05-01)
@@ -226,6 +228,46 @@ These facts inform Phase 2 interpretation regardless of whether they are reflect
 **Sign-off path.** After either reviewer feedback received and addressed, OR 5-day timeout reached, AND Phase 2 setup verified end-to-end on smoke tests, request explicit sign-off on Phase 2 execution. Sign-off conditional on no material reviewer concern surfacing that requires response.
 
 **Dependency on the human reviewer.** Recruiting external reviewer is a social act with reputation consequences that the human reviewer owns and Claude cannot perform. Claude can draft a recruit message for the human reviewer to adapt; the actual outreach is the human reviewer's. If the human reviewer chooses not to recruit (for example, because no suitable candidate available within reasonable bandwidth), the moratorium reverts to "Phase 2 execution proceeds without external review, public artifact remains available for post-hoc inspection" with that decision documented as a follow-up to this entry.
+
+---
+
+## D-010 — Pythia §4.4 protocol pre-launch failure, decision to run-as-written, and pre-specified reporting language (2026-05-02)
+
+**Trigger.** Pre-launch smoke test on the pre-registered §4.4 contamination-arm protocol surfaced that the log-likelihood scoring produces argmax=1 across all V2 dimensions for all 5 sample papers spanning the Impact_primary range, on both Pythia-70M-deduped and Pythia-1.4B-deduped (22× size difference). Log-prob margins of "1" over second-place candidates were 0.75-1.12 nats — strong, not noise. Triangulation across two model sizes with identical pathology argues structural prompt-format priming (`"(d) overall promise: "` invites `"1"` as natural numbered-list continuation in pretraining text) rather than capacity limitation. Pythia-6.9B almost certainly inherits the same pathology.
+
+**What this means for the test as pre-registered.** §4.4 contamination-arm protocol produces uniform output for our V2 prompt construction. Implication: ρ(Pythia_score, Impact) = undefined-or-zero (constant has no rank); §5.2 #4 (Pythia-vs-Opus discrimination gap), §5.2 #5a (Pile-cutoff discontinuity test), and any other Pythia-involving analyses become null/meaningless. Frontier-arm tests (§5.1.A and §5.1.B) are unaffected — both compare Opus against citation-velocity baseline; neither depends on Pythia.
+
+**Three options considered (decomposed per Q1-Q4 framing in human reviewer message).**
+- Q1 (salvageable?) — Not without protocol revision (different prompt format, score normalization against neutral baseline, multiple-choice format, or fine-tuning). Each candidate fix would itself require validation.
+- Q2 (moratorium permits revision?) — §0 condition 2 includes "discovered impossibility" in its permitted-revision list, which arguably covers a protocol that produces constant output. **However, D-008 explicitly tightened the operative exception list for Phase 2 to "strict factual error in the documented sense — e.g., wrong checkpoint cutoff, implementation bug" — narrower than §0.** Our case (faithful implementation of spec; spec produces constant output) fits §0 broadly but fits neither D-008 example narrowly. Under D-008's binding self-restriction, revision is not permitted unless we openly waive D-008, which would itself be a major credibility commitment.
+- Q3 (which fix?) — moot if Q2 says no.
+- Q4 (scope adjustment if no revision?) — two sub-options:
+  - **A. Run as written, report documented null.** Pay HF endpoint cost (~$1-2), execute §4.4 protocol on Pythia-eligible subset, get predicted-null result, document with full transparency.
+  - **C. Drop Pythia from Pilot 1A scope.** DECISIONS-level scope adjustment per pre-existing §11 staging structure; defer Pythia entirely to Pilot 1B.
+
+**Resolution: Option A (run as written, document null).**
+
+**Reasoning.** A produces lasting documented evidence that the §4.4 protocol fails for ML paper abstracts on accessible-capacity Pile-trained models — useful artifact for future researchers designing contamination protocols. C produces silence about Pythia from 1A and merely defers the protocol-design problem. The ~$1-2 cost differential is trivial; the documentation value asymmetry favors A.
+
+**Pre-specified reporting language (binding before execution).** When reporting the documented null Pythia result, the writeup must include all of the following without overclaim:
+
+1. **Statement of fact:** "On the Pythia-eligible subset (n≈419), the §4.4 log-likelihood scoring protocol produced argmax=1 for all V2 dimensions on all papers, yielding constant Pythia output. Per-paper log-prob margins of '1' over second-place candidates were [report median + range] nats."
+
+2. **Pre-launch evidence cited:** "Pre-launch smoke testing on Pythia-70M-deduped and Pythia-1.4B-deduped (22× size range) showed identical pathology, indicating the constant output reflects structural prompt-format priming rather than model-size capacity limitation. The 6.9B run confirms the prediction."
+
+3. **Two interpretations explicitly flagged:** "Two interpretations of this null are possible. (i) The §4.4 protocol's prompt format ('(d) overall promise: ') primes list-continuation prior toward '1' as natural completion, regardless of paper content. This interpretation predicts the protocol would fail at any model size on this prompt. (ii) Available open-model capacity (≤6.9B Pile-cutoff-pre-2020) is insufficient to override the list-continuation prior, but a hypothetical larger Pile-cutoff-pre-2020 model might succeed. Triangulation across 70M, 1.4B, and 6.9B with consistent pathology weakly favors (i), but (ii) cannot be definitively ruled out without testing a larger pre-2020-cutoff model — none readily available."
+
+4. **Implications statement (no overclaim):** "This is a finding about the §4.4 protocol on this corpus and prompt format, not a claim about Pythia models' capacity for paper evaluation in general. Future contamination-control work on similar corpora should pre-validate the scoring protocol on small samples before committing pre-registered design."
+
+5. **Test-impact statement:** "Pythia-involving analyses (§5.2 #4, #5a) are reported as inconclusive with the protocol-failure caveat. The frontier-arm primary tests (§5.1.A and §5.1.B) are reported on their own terms; their interpretation does not depend on Pythia output but inherits the limitation that contamination of Opus on 2020-2022 arXiv papers is not directly controlled within Pilot 1A."
+
+This language is pre-specified before execution to prevent post-hoc drift in interpretation. Any deviation from the above structure in the actual writeup is itself a documented choice subject to its own justification.
+
+**Rejected: Option C (drop Pythia from 1A).** Considered seriously; rejected after Claude's push-back highlighted that C produces no Pythia evidence from 1A and merely defers the protocol-design problem to 1B under similar pressures. Documented as rejected option per discipline of recording alternatives considered.
+
+**Conformance with D-008.** This is not a pre-reg revision. §4.4 protocol runs as written. Scope is unchanged. The decision is purely about reporting language for the predicted-null result. Conforms with D-008 moratorium without invoking any exception.
+
+**Counter-argument acknowledged.** A literal reading of pre-reg reads §4.4 as expecting variable output (otherwise the protocol's discriminative purpose makes no sense). Running a protocol the smoke tests predict will fail is arguably wasteful. But the documentation value (lasting evidence for future protocol design) and the discipline value (no pre-reg revision under crisis pressure) jointly outweigh the ~$1-2 inference cost. The waste is bounded; the benefit is durable.
 
 ---
 
