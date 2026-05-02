@@ -201,6 +201,34 @@ These facts inform Phase 2 interpretation regardless of whether they are reflect
 
 ---
 
+## D-009 — External review recruitment before Phase 2 execution (2026-05-02)
+
+**Trigger.** D-008 closed by accepting external review as the structural fix to the adversarial-review degradation pattern that emerged in this conversation. This entry records the recruitment decision, the criteria, the framing of the ask, the timeout, and the operational distinction between Phase 2 setup (proceeds in parallel) and Phase 2 execution (paused pending reviewer feedback or timeout).
+
+**Decision.** Recruit one independent metascience reviewer before launching Phase 2 inference. Reasoning:
+- D-008 already established that adversarial-review function depends on a single source providing it; external review is the structural fix, not optional supplement.
+- Cost-benefit asymmetry: 1–2 days delay vs. independent check on what neither human reviewer nor AI agent is positioned to see. Phase 2 inference is bounded and reversible but external review pre-launch is much cleaner than catching issues post-launch.
+- Demonstrative value: external adversarial review at hash-lock points is exactly the institutional feature that the project's larger thesis (Hong-Henrich) identifies as making transmission-fitness align with truth-fitness. Doing it on this pilot demonstrates the principle rather than only claiming it.
+- Solo-researcher trap: tight collaboration loop between human and AI agent is exactly how solo work becomes intellectually inbred without anyone noticing. External human reviewer breaks the loop. Even if they catch nothing, the loop being broken matters.
+
+**Reviewer criteria.** Strong methodology background (metascience, pre-registration, replication research) plus enough skepticism about LLM/AI claims to push back hard. Not co-architects of the project, not people already invested in its success. Candidates the human reviewer will consider: Berkeley Initiative for Transparency in Social Sciences / COS network adjacents; computational metascience researchers (Smaldino, Bergstrom group people if accessible); skeptical AI/methodology researchers in the Sayash Kapoor / Arvind Narayanan ecosystem; local academic contacts with research-methodology expertise unobligated to be supportive. Recruit one good reviewer rather than three convenient ones.
+
+**Framing of the ask.** Not "approve this." Specifically: "is this revision pattern sustainable, and is the bundling of the partial-correlation addition with the framing correction in v1.2 a structural problem I should worry about?" Frame the request such that "no, you have a problem" is the easy answer to give — reviewers tend to soften critique unless explicitly invited to be sharp.
+
+**Materials to share.** Full revision trail, not only v1.2: original v1.0 + D-005 (Pile-cutoff revision rationale) + v1.1 + D-007 (framing-correction + partial-correlation rationale) + v1.2 + D-008 (pattern recognition + commitments). Pattern is visible only across revisions, not in any individual document; reviewer needs the full set to answer the pattern question.
+
+**Timeout.** 5 days from recruitment outreach. If no reviewer engagement within that window, proceed to Phase 2 execution and document the unsuccessful recruit attempt in DECISIONS as a follow-up to this entry. Indefinite wait is its own form of drift — recruitment process cannot itself become procrastination dressed as rigor.
+
+**Operational distinction during recruitment wait.**
+- **Phase 2 setup (allowed):** Pythia checkpoint verified loadable, log-likelihood scoring code written and unit-tested (per pre-reg §4.4 pseudocode), prompt template files finalized, inference scripts skeletoned, pipeline tested end-to-end on ≤5-paper smoke tests against both Anthropic API and HF Inference Endpoint. Citation-velocity baseline data pulled (citingPaper.publicationDate fields added if needed for accurate 12-month-post-submission computation). All reversible, none compromise test integrity.
+- **Phase 2 execution (paused):** No full inference run on the 500-paper blinded corpus. No generation of predictions that would feed §5.1.A or §5.1.B tests. No comparison of any model output against composite Impact.
+
+**Sign-off path.** After either reviewer feedback received and addressed, OR 5-day timeout reached, AND Phase 2 setup verified end-to-end on smoke tests, request explicit sign-off on Phase 2 execution. Sign-off conditional on no material reviewer concern surfacing that requires response.
+
+**Dependency on the human reviewer.** Recruiting external reviewer is a social act with reputation consequences that the human reviewer owns and Claude cannot perform. Claude can draft a recruit message for the human reviewer to adapt; the actual outreach is the human reviewer's. If the human reviewer chooses not to recruit (for example, because no suitable candidate available within reasonable bandwidth), the moratorium reverts to "Phase 2 execution proceeds without external review, public artifact remains available for post-hoc inspection" with that decision documented as a follow-up to this entry.
+
+---
+
 ## Convention for future entries
 
 When a new arbitration moment occurs (during execution, analysis, or write-up), append a new D-NNN entry with the same structure. If the moment leads to a deviation from pre-registration, *also* document in `DEVIATIONS.md` per §9 procedure, with cross-reference between the two files.
