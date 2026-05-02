@@ -19,3 +19,7 @@ secrets/
 .vscode/
 .idea/
 *.swp
+
+# Large uncompressed pulls — committed compressed instead (.gz).
+# Re-create from .gz with: gunzip -k <file>.gz
+corpus_outcomes/citations_for_500.jsonl

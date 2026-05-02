@@ -3,10 +3,15 @@
 Caching essential per pre-reg operational discipline: pull once, store as JSONL,
 never re-pull. Writes go to a tempfile then atomically rename to avoid corrupted
 output on interruption.
+
+Read functions transparently support gzip-compressed JSONL: if the requested path
+does not exist, a sibling `.gz` is tried. Used for committing large pulls (S2
+citations) compressed.
 """
 
 from __future__ import annotations
 
+import gzip
 import json
 import os
 import tempfile
@@ -35,13 +40,21 @@ def write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> int:
 
 
 def read_jsonl(path: Path) -> Iterator[dict[str, Any]]:
-    if not path.exists():
+    """Read JSONL, transparently falling back to <path>.gz if the plain file is absent."""
+    if path.exists():
+        with path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    yield json.loads(line)
         return
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                yield json.loads(line)
+    gz_path = path.with_suffix(path.suffix + ".gz")
+    if gz_path.exists():
+        with gzip.open(gz_path, "rt", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    yield json.loads(line)
 
 
 def append_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> int:
