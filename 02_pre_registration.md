@@ -1,11 +1,11 @@
 # Pre-Registration: Retrodictive Calibration Pilot
 
-**Status:** v1.1 — pre-data revision of v1.0 (2026-05-01)
+**Status:** v1.2 — pre-data revision of v1.1 (2026-05-02)
 **Hash-lock:** recorded in `HASH.md`
 **Pre-registered author:** Theodor Spiro (tspiro@vaika.org)
 **Reviewer commitment:** results published regardless of direction (positive, null, or negative)
 **Stage:** Pilot 1A specified in full; Pilot 1B contingent on 1A success criterion (see §11)
-**Version history:** v1.0 hash-locked at git tag `prereg-v1.0` (commit 613c0be); revisions documented in `CHANGELOG.md`
+**Version history:** v1.0 (commit 613c0be), v1.1 (commit 2765401) — both preserved with original tags and OpenTimestamps proofs; revisions documented in `CHANGELOG.md`. Pilot 1A corpus, Semantic Scholar enrichment, citation pull, and composite Impact computation completed before v1.2 — descriptive Phase 1 measurements informing this revision; no LLM predictions or test outcomes computed.
 
 ---
 
@@ -93,9 +93,19 @@ Impact = 0.25 × NormalizedCitation
 
 Each component is normalized to [0, 1] within the subfield × publication-year cell *before* combination.
 
-**Rationale for flipped weights.** Per the project's theoretical framework (Smaldino-McElreath, Hong-Henrich), pure transmission signals (citations) systematically diverge from truth-fitness under realistic incentives. Method-reuse is closer to truth-tracking — methods that work get reused, methods that don't get abandoned — and so receives the largest weight. Replication mentions and inverse retraction are weaker but more direct truth-tracking signals. Raw normalized citation is retained as a substantial component (25%) because it is the most-measurable and least-noisy single signal, but it does not dominate.
+**Rationale for flipped weights.** Per the project's theoretical framework (Smaldino-McElreath, Hong-Henrich), pure transmission signals (citations) systematically diverge from truth-fitness under realistic incentives. Method-reuse is closer to truth-tracking — methods that work get reused, methods that don't get abandoned — and so receives the largest weight. Replication mentions and inverse retraction are weaker but more direct truth-tracking signals. Raw normalized citation is retained as a substantial component (25%) because it is the most-measurable and least-noisy single signal.
 
-**Acknowledged limitations of flipped weights.** Method-reuse has its own bias toward usability — easy-to-implement methods get reused even if not the most rigorous. This is a real but bounded weakness; the multi-component composite plus sensitivity analyses (§3.4) is intended to dilute any single component's bias.
+**Empirical characterization (added v1.2, post-Phase-1 corpus diagnostic; see §6).** Earlier versions (v1.0, v1.1) framed the flipped formula as moving "substantially away from transmission-fitness toward truth-tracking." Phase 1 corpus diagnostics show this framing was overstated. Measured on the Pilot 1A NLP corpus (n=500, see DECISIONS D-007):
+
+- ρ(Impact_primary, raw citationCount) = **0.865**
+- ρ(Impact_sensitivity, raw citationCount) = **0.964**
+- Effective movement between transmission-weighted (sensitivity) and flipped (primary) formulas: **Δρ = 0.099** — modest, not substantial.
+- Decomposition: NormalizedCitation alone has ρ=0.978 with citations (mechanical, by construction at 25% weight); MethodReuseSignal alone has ρ=0.528 (moderate independent signal); ReplicationSignal alone has ρ=0.286 (weak independent signal).
+- Approximately 25% of Impact_primary variance is **non-citation residual** — that is the variance space in which the discrimination test (§5.1) operates.
+
+The formula's discriminative purpose is therefore narrower than the original "substantial movement" framing implied: it tests whether LLM-as-judge can capture the residual ~25% of impact variance that is *not* explained by raw citation count. This is a high but defensible bar, addressed directly by the partial-correlation test added in v1.2 §5.1.
+
+**Acknowledged limitations of flipped weights.** Method-reuse has its own bias toward usability — easy-to-implement methods get reused even if not the most rigorous. NormalizedCitation by construction tracks citations and dominates the weighted sum's correlation with raw citations. The multi-component composite plus sensitivity analyses (§3.4) and the partial-correlation test (§5.1) are intended to address these biases together rather than dilute them in isolation.
 
 **Sensitivity formula (original transmission-weighted, retained as secondary):**
 
@@ -225,21 +235,45 @@ Total if both stages run: **~$50 worst case**. If 1A fails gate, project stops a
 
 ## 5. Statistical analysis
 
-### 5.1 Primary test (gate criterion for Pilot 1A)
+### 5.1 Primary tests (gate criterion for Pilot 1A)
+
+Two co-primary tests, both pre-specified, both required to pass for the stage gate (§11) to be met. Each addresses a distinct substantive question about LLM-as-judge.
+
+#### 5.1.A Marginal test — does the LLM beat the trivial bibliometric baseline?
 
 **Test:** Spearman ρ between V2-overall score from `claude-opus-4-7` and composite Impact (primary flipped formula, §3.1), computed on all 500 NLP papers in Pilot 1A.
 
 **Baseline:** Spearman ρ between citation velocity (citations accrued in first 12 months post-arXiv-submission, computed from Semantic Scholar timestamps) and the same composite Impact, on the same 500 papers.
 
-**Success criterion:** point estimate (ρ_LLM − ρ_baseline) ≥ 0.05 AND bootstrapped 95% CI of the difference excludes zero (10,000 bootstrap resamples, paired-paper resampling).
+**Success criterion 5.1.A:** point estimate (ρ_LLM − ρ_baseline) ≥ 0.05 AND bootstrapped 95% CI of the difference excludes zero (10,000 bootstrap resamples, paired-paper resampling).
 
-**Failure modes:**
-- ρ_LLM ≤ ρ_baseline + 0.05 → H0 retained, gate fails, project stops
-- 95% CI overlaps zero → inconclusive, gate fails (replication or design revision required)
+**What it measures.** Whether LLM-as-judge produces a more informative ranking of impact than the simplest possible non-semantic heuristic (year-1 citation count predicting year-4 impact).
 
-This is the gate criterion for proceeding to Pilot 1B (§11).
+#### 5.1.B Partial-correlation test — does the LLM add value beyond raw citations?
 
-**Why ρ over AUC for primary.** AUC requires dichotomization which discards information from the middle 40% of impact tier and makes the task artificially easier (only extremes compared). ρ uses all 500 papers and the full impact distribution, providing higher statistical power and more directly reflecting the use-case (rank-ordering of ideas).
+**Motivation (added v1.2 from §3.1 empirical characterization).** Phase 1 diagnostic showed Impact_primary correlates ρ=0.865 with raw citationCount; only ~25% of Impact variance is non-citation residual. The marginal test (5.1.A) can therefore be passed by an LLM that essentially recapitulates citation patterns. The partial-correlation test directly asks whether the LLM contributes *additional* discriminative information beyond what raw citations already encode.
+
+**Test:** Partial Spearman ρ between V2-overall score from `claude-opus-4-7` and composite Impact_primary, controlling for raw citationCount (rank-residual approach: regress LLM rank on citation rank, regress Impact rank on citation rank, compute Spearman ρ between residuals; equivalent to standard partial Spearman).
+
+**Success criterion 5.1.B:** partial ρ ≥ 0.15 AND bootstrapped 95% CI excludes zero (10,000 bootstrap resamples, paired-paper resampling on the underlying 500 papers).
+
+**Why 0.15 threshold.** Partial Spearman ρ is bounded [-1, +1] but typically smaller in magnitude than marginal ρ. With n=500 and bootstrap CI width ~0.07, partial ρ ≥ 0.15 is non-trivially distinguishable from zero and represents ~2.25% of variance not shared with citations — small effect size that is nonetheless substantively meaningful for a discriminative test. Pre-committed to avoid post-hoc threshold tuning.
+
+**What it measures.** Whether LLM-as-judge captures impact-relevant signal that is genuinely orthogonal to (not derivable from) raw citation counts. Directly tests the project's central claim that LLM judgment adds value beyond pure transmission proxies.
+
+#### Combined gate
+
+**Stage gate (§11) success requires BOTH 5.1.A AND 5.1.B to pass.** This preserves the discipline of the binary hard gate.
+
+**Possible mixed outcomes (informative but gate fails):**
+- 5.1.A passes, 5.1.B fails → LLM adds value over trivial baseline but not beyond raw citations; result is "LLM ≈ citation-count proxy with extra cost" — gate fails, no Pilot 1B.
+- 5.1.A fails, 5.1.B passes → LLM captures non-citation signal but doesn't beat baseline; result is "LLM has independent signal but signal too weak to beat trivial heuristic" — gate fails, no Pilot 1B.
+- Both fail → clean null. Gate fails, no Pilot 1B, project pivots.
+- Both pass → discriminative, additive over citations. Gate passes, Pilot 1B launches.
+
+All outcomes reported in writeup regardless of gate decision.
+
+**Why ρ over AUC for primary.** AUC requires dichotomization which discards information from the middle 40% of impact tier and makes the task artificially easier (only extremes compared). ρ uses all 500 papers and the full impact distribution, providing higher statistical power and more directly reflecting the use-case (rank-ordering of ideas). AUC retained as secondary (§5.2 #1) for interpretability.
 
 ### 5.2 Secondary analyses (pre-specified)
 
@@ -293,10 +327,9 @@ Acknowledged sources of bias, with attempted mitigations:
 | Subfield-specific dynamics | NLP primary in 1A; CV/RL robustness in 1B | Mitigated, not eliminated |
 | Method-reuse bias toward usability | Acknowledged in §3.1; component capped at 35% | Real, structural |
 | Pythia weak capability confounds with no-contamination | Fame-stratified analysis (§5.2 #4); GPT-2 floor in 1B | Cannot fully resolve |
-
----
-
-## 7. Deliverables
+| Impact_primary correlates ρ=0.865 with raw citationCount on Pilot 1A corpus (added v1.2 from Phase 1 diagnostic; full decomposition in DECISIONS D-007) — only ~25% of Impact variance is non-citation residual | Partial-correlation test (§5.1.B) directly tests LLM contribution beyond raw citations, controlling for the dominant transmission component | Marginal test (§5.1.A) inevitably confounded with citation-velocity baseline; partial test bypasses the confound |
+| InverseRetractionScore is constant 1.0 in current implementation (Retraction Watch + arXiv-withdrawal cross-check + flagged-by-citing-papers multiplier deferred per REPRODUCE.md known limitations) | Constant component contributes uniform 0.15 offset to all scores; rank-based primary tests (Spearman ρ, partial ρ) are invariant to constant offsets — discriminative power unchanged. Verified: ρ(Impact_primary, Impact_no_IRR_renormalized) = 1.000 | Component not contributing variance; if non-zero retraction count later verified for any sample paper, IRR can be recomputed without affecting Phase 2 outputs |
+| Semantic Scholar `/citations` endpoint capped at offset+limit < 10000; one paper in Pilot 1A NLP corpus (arXiv 2203.02155, InstructGPT, 20,158 citations reported) has only its first 9,000 citations pulled. S2 intent-classifier is also empirically sparse for super-popular papers (this paper's raw_method_reuse = 0.001) | Documented as known per-paper limitation; that paper's Impact_primary likely understated relative to its actual influence. Sensitivity check: re-run primary tests with this paper excluded to verify it does not drive the gate decision | One outlier with biased Impact estimate; bounded effect on rank-based test (single rank position misplaced) |
 
 Released regardless of result:
 1. This pre-registration (hash-locked)

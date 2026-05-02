@@ -98,6 +98,78 @@ Entries are append-only. Each entry records: the moment, what was initially prop
 
 ---
 
+## D-007 — Phase 1 diagnostic, framing correction, and partial-correlation test addition (2026-05-02)
+
+**Trigger.** Phase 1 corpus construction completed end-to-end (24K arXiv, S2 enrichment, stratified 500, 68K citations, composite Impact computed). Initial agent reporting of Impact distribution included framing that the flipped formula "moves substantially away from transmission-fitness toward truth-tracking" with a top-paper case as illustration. Human reviewer flagged this framing as overstated, noting that ρ(Impact_primary, citations) = 0.865 is high and might mean the primary test (§5.1 marginal Spearman ρ) is approximately measuring "LLM vs. citations" with a small additional component. Three explanations to discriminate:
+- (a) Components naturally correlate with citations in this corpus
+- (b) Implementation collapses signal (e.g., sparse intent classification)
+- (c) Test relevance is in residual variance after controlling for citations
+
+**Diagnostic findings (full numerical detail in commit ccdb61b...931ad33 analysis output, summarized here):**
+
+Component decomposition vs. raw citationCount on the Pilot 1A NLP corpus (n=500):
+- NormalizedCitation: ρ = +0.978 (mechanical, by construction at 25% weight)
+- MethodReuseSignal (cell-normalized): ρ = +0.528 (moderate independent signal)
+- ReplicationSignal (cell-normalized): ρ = +0.286 (weak independent signal)
+- Impact_primary (composite): ρ = +0.865
+- Impact_sensitivity (composite): ρ = +0.964
+- Effective movement primary vs. sensitivity formula: Δρ = 0.099
+
+Cross-correlations (independence of components):
+- ρ(MethodReuseSignal, ReplicationSignal) = +0.013 — components are essentially orthogonal, capturing different things
+- ρ(MethodReuseSignal, NormalizedCitation) = +0.497
+- ρ(ReplicationSignal, NormalizedCitation) = +0.268
+
+Implementation correctness (b vs. a/c discriminator):
+- Per-paper intent-classification rate vs. citationCount: ρ = +0.041 — uncorrelated. Denominator of MethodReuseSignal is honest; classification rate is not biased by paper popularity. Implementation is correct.
+- Raw count of method-reuse-classified citations (numerator only) vs. total citations: ρ = +0.887 — confirms that count-based signal would have been pathologically citation-driven; the pre-reg's choice of fraction was correct.
+
+Top/bottom tier overlap (formula vs. raw citation ranking):
+- Top-30% Impact_primary vs. top-30% citations: 119/150 (79%) overlap
+- Bottom-30% Impact_primary vs. bottom-30% citations: 136/150 (91%) overlap (largely tied at 0 citations)
+- Top-10 vs. top-10: 4/10 — substantive disagreement at the head of the distribution
+- Top-10 by Impact_primary that are NOT top-10 by citations are typically papers with moderate citation counts (340–1280) but high method-reuse fraction (0.24–0.37) and moderate replication-mention counts
+
+InverseRetractionScore as constant 1.0 (rank effect):
+- ρ(Impact_primary, Impact_no_IRR_renormalized) = 1.000
+- ρ(Impact_no_IRR_renormalized, citations) = 0.865 — identical to original
+- IRR's role is purely a constant 0.15 floor; rank-based primary tests are unaffected. Component is bookkeeping only.
+
+S2 citation cap on InstructGPT paper:
+- arXiv 2203.02155, 20,158 reported citations, 9,000 pulled before S2's offset+limit < 10000 cap
+- S2 intent classifier sparse for this paper (raw_method_reuse = 0.001 — only ~9 of 9,000 sampled classified as methodology)
+- Likely Impact_primary is understated for this paper; documented in §6 limitations table
+
+**Verdict on (a) / (b) / (c).**
+- (b) NO — implementation is correct, validated by intent-rate independence from citations
+- (a) PARTIALLY — fraction-based components have moderate correlation with citations (0.528, 0.286), and NormalizedCitation has high correlation by design (0.978). The composite's high correlation is structural, not pathological.
+- (c) YES — approximately 25% of Impact_primary variance is non-citation residual; the test's discriminative purpose lives in that residual.
+
+**Action options considered:**
+
+- **Option A (Path A in reviewer framing):** Revise pre-registration to v1.2. Specifically: (i) §3.1 framing correction to honestly characterize Δρ = 0.099 movement, (ii) §5.1 add partial-correlation test as co-primary alongside marginal test, (iii) §6 expansion with diagnostic findings, (iv) D-007 captures full diagnostic and revision rationale.
+
+- **Option B (Path B in reviewer framing):** Keep pre-registration v1.1, document framing mismatch as honest limitation in DECISIONS.md only, plan to address in final report's limitations section. Add partial-correlation analysis as secondary via DEVIATIONS.md noting it's added pre-data based on Phase 1 diagnostic.
+
+**Resolution.** Option A. Revised to v1.2.
+
+**Reasoning.** §0 condition 1 ("no data has been collected since the prior version") is most naturally read as protecting against post-hoc adjustment driven by predictive results (LLM_pred vs. Impact). Phase 1 corpus construction yields descriptive properties of the measurement instrument, not predictive results. Realizing that the instrument's behavior differs from the pre-reg's framing claims is a factual correction parallel to the v1.0 → v1.1 Pile-cutoff correction: claim in pre-reg does not match reality, pre-data, correctable through revision per §0 conditions 2–5. The partial-correlation test is added because the marginal test (5.1.A) is now visibly confounded by the dominant citation component; partial test (5.1.B) directly addresses the project's substantive claim (LLM judgment adds value beyond raw citations). Adding it pre-data does not bias the test direction because no LLM outputs have been computed.
+
+**Counter-argument acknowledged.** Pre-registration revisions accumulate credibility cost. v1.2 is the second revision in two days. The cost is real but bounded: each revision is fully documented (CHANGELOG entry, DECISIONS entry, hash, OpenTimestamps proof, public push), and the alternative (Option B) creates exactly the kind of pre-reg-vs-actual mismatch that revision policy exists to prevent. The v1.2 revision satisfies all five §0 conditions; if the policy is correctly designed, this is the case it permits.
+
+**Conformance attestation.** v1.2 satisfies §0 conditions: (1) no LLM predictions or test outcomes computed; corpus construction is descriptive measurement, not predictive analysis (judgment call documented above); (2) revision is factual correction (§3.1 framing) plus analysis improvement informed by descriptive diagnostic (§5.1 partial test) — neither motivated by reasoning about expected test outcomes; (3) v1.0 and v1.1 preserved in git history at their tags with original ots proofs; (4) atomic replacement of working file with new SHA, ots, tag prereg-v1.2; (5) CHANGELOG entry documents transition with explicit attestation.
+
+**Residual concern acknowledged.** The "descriptive vs. predictive data" distinction within §0 is a judgment call I introduced in this entry; future revisers could stretch it. Mitigation: the policy's wording remains literal ("no data has been collected") and any future revision that invokes this distinction must do so in DECISIONS with explicit reasoning showing why corpus-side data is non-bias-inducing. The structural protection is intact; the discretion lives in the public reasoning trace.
+
+**Independent of the revision.** Even if the reviewer had chosen Option B, three operational facts surfaced by this diagnostic stand:
+- The marginal test (§5.1 v1.1) is meaningfully confounded by citations and harder to interpret cleanly than originally framed
+- The partial-correlation analysis is more directly relevant to the project's central claim
+- IRR-as-constant has zero effect on the rank-based primary test; all 15% weight is absorbed as constant offset
+
+These facts inform Phase 2 interpretation regardless of whether they are reflected in the pre-reg document or only in the final report's limitations section.
+
+---
+
 ## Convention for future entries
 
 When a new arbitration moment occurs (during execution, analysis, or write-up), append a new D-NNN entry with the same structure. If the moment leads to a deviation from pre-registration, *also* document in `DEVIATIONS.md` per §9 procedure, with cross-reference between the two files.

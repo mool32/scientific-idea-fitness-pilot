@@ -2,14 +2,14 @@
 
 This file records the cryptographic hash of `02_pre_registration.md` at each version of the pre-registration. The current version is the canonical `02_pre_registration.md` in the working tree. Prior versions remain in git history under their original tags. Revisions are governed by §0 (Revision policy) of the pre-registration; transitions are documented in `CHANGELOG.md`.
 
-## Current version: v1.1
+## Current version: v1.2
 
 - **File:** `02_pre_registration.md`
-- **SHA-256:** `382a7a46afbca1ce2095e27fa69ac26d7a537c108164a160267d411cefc4485c`
-- **Hashed at (UTC):** `2026-05-01T20:43:22Z`
-- **Length:** 384 lines
+- **SHA-256:** `1458834ac793b1d58205a80ad42a93178660311b9130b01720598726642f089d`
+- **Hashed at (UTC):** `2026-05-02T13:25:46Z`
+- **Length:** 417 lines
 - **Author:** Theodor Spiro (tspiro@vaika.org)
-- **Git tag:** `prereg-v1.1`
+- **Git tag:** `prereg-v1.2`
 
 ## Verification
 
@@ -17,7 +17,7 @@ To verify integrity at any later time:
 
 ```bash
 shasum -a 256 02_pre_registration.md
-# Should output: 382a7a46afbca1ce2095e27fa69ac26d7a537c108164a160267d411cefc4485c
+# Should output: 1458834ac793b1d58205a80ad42a93178660311b9130b01720598726642f089d
 ```
 
 If the hash differs, either (a) the working tree has been modified post-lock — investigate via git history; or (b) a new version has been issued — see CHANGELOG.md.
@@ -35,6 +35,22 @@ ots verify 02_pre_registration.md.ots
 Initial proof contains pending attestations to multiple Bitcoin calendar servers. After Bitcoin block inclusion (~1-3 hours from initial stamp), run `ots upgrade 02_pre_registration.md.ots` to download the complete blockchain proof, then commit the upgraded `.ots` file.
 
 ---
+
+## Prior version: v1.1 (superseded 2026-05-02 by v1.2, see CHANGELOG.md)
+
+- **File:** `02_pre_registration.md` at git tag `prereg-v1.1` (commit `2765401`)
+- **SHA-256:** `382a7a46afbca1ce2095e27fa69ac26d7a537c108164a160267d411cefc4485c`
+- **Hashed at (UTC):** `2026-05-01T20:43:22Z`
+- **Length:** 384 lines
+- **OpenTimestamps proof:** in git history at the same commit
+- **Public push:** 2026-05-01T to `github.com/mool32/scientific-idea-fitness-pilot`
+
+To verify v1.1 at any later time:
+
+```bash
+git show prereg-v1.1:02_pre_registration.md | shasum -a 256
+# Should output: 382a7a46afbca1ce2095e27fa69ac26d7a537c108164a160267d411cefc4485c
+```
 
 ## Prior version: v1.0 (superseded 2026-05-01 by v1.1, see CHANGELOG.md)
 
@@ -58,4 +74,4 @@ The v1.0 hash above was finalized before the first public push to GitHub. An ear
 
 ## Subsequent versions
 
-(none beyond v1.1 yet)
+(none beyond v1.2 yet)

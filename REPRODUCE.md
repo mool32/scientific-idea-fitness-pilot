@@ -90,6 +90,21 @@ Set `S2_API_KEY` environment variable for authenticated S2 rate limits (recommen
 
 If a script fails midway: most are resume-safe (per-month skip for arXiv pull; per-record dedupe for S2 enrichment and citations pull). The exception is the gzipped citations file — to resume the citations pull after compression, first run `gunzip -k corpus_outcomes/citations_for_500.jsonl.gz`.
 
+### Phase 1 corpus characterization (added 2026-05-02 from diagnostic)
+
+Pilot 1A NLP corpus (n=500) has the following composite-Impact properties, measured after Phase 1 ran end-to-end. These are descriptive of the measurement instrument; full diagnostic trace in `DECISIONS.md` D-007 and characterization paragraph in pre-reg v1.2 §3.1.
+
+- ρ(Impact_primary, raw citationCount) = +0.865
+- ρ(Impact_sensitivity, raw citationCount) = +0.964
+- Δρ between formulas = 0.099 (modest movement)
+- Component–citation ρ: NormalizedCitation +0.978 (mechanical), MethodReuseSignal +0.528, ReplicationSignal +0.286
+- ~25% of Impact_primary variance is non-citation residual
+
+Implications for the primary test (pre-reg v1.2 §5.1):
+- Marginal test (5.1.A) is meaningfully confounded by citations — citation-velocity baseline will correlate strongly with Impact_primary
+- Partial test (5.1.B), added in v1.2, directly tests "LLM adds value beyond raw citations"
+- Stage gate (§11) requires BOTH primary tests to pass
+
 ### Known limitations of the current implementation
 
 - **InverseRetractionScore** (§3.2 component, weight 15%) is currently constant 1.0

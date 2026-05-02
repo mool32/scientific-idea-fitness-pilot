@@ -36,6 +36,30 @@ Revisions are governed by the policy in `02_pre_registration.md` §0 (Revision p
 
 ---
 
+## v1.1 → v1.2 (2026-05-02)
+
+**Trigger.** Phase 1 corpus construction completed (24K arXiv papers, S2 enrichment, stratified 500, 68K citations, composite Impact). Initial agent reporting characterized the flipped formula as moving "substantially away from transmission-fitness toward truth-tracking." Human reviewer flagged this framing as overstated given ρ(Impact_primary, citations) = 0.865, prompting a diagnostic investigation. Diagnostic confirmed the framing was overstated: effective movement between sensitivity (transmission-weighted) and primary (flipped) formulas is Δρ = 0.099 — modest, not substantial. Implementation is correct (per-paper intent classification rate uncorrelated with citations, ρ=0.041); the high composite correlation is structural, dominated by NormalizedCitation's by-construction ρ=0.978 with raw citations at 25% weight.
+
+The marginal Spearman ρ test (§5.1 v1.1) is therefore confounded by citations more than the v1.1 framing implied. To test the project's central substantive claim — that LLM-as-judge adds discriminative value *beyond* what raw citations provide — a partial-correlation test is the more direct operationalization.
+
+**Changes in v1.2.**
+
+- **§3.1:** Added an "Empirical characterization" paragraph that honestly states ρ values measured on the Pilot 1A corpus, the Δρ = 0.099 effective movement, and that ~25% of Impact_primary variance is non-citation residual (where the discriminative test operates). Replaced the "moves substantially away" language. Updated "Acknowledged limitations" to point at the new partial-correlation test as the principal address for the bias rather than just dilution via composite weighting.
+
+- **§5.1:** Restructured into two co-primary tests, both pre-specified and both required to pass for the stage gate (§11). Test 5.1.A is the original marginal Spearman ρ vs. citation-velocity baseline (unchanged). Test 5.1.B is a new partial Spearman ρ test, controlling for raw citationCount, with success threshold ≥ 0.15 and bootstrapped CI excluding zero. Added explicit specification of all four possible joint outcomes (both pass / 5.1.A passes only / 5.1.B passes only / both fail).
+
+- **§6:** Added three new rows to the contamination-and-confounding table covering (i) the Impact–citation correlation structure surfaced by Phase 1 diagnostic, with §5.1.B as the principal mitigation; (ii) the InverseRetractionScore-as-constant implementation (with explicit verification that ρ-based primary tests are invariant to constant offsets); (iii) the S2 citation cap on the InstructGPT paper (arXiv 2203.02155).
+
+- **Header:** Status updated to v1.2; version history extended; data-collection attestation refined to specify that descriptive Phase 1 measurements were completed before this revision but no LLM predictions or test outcomes were computed.
+
+**Data-collection attestation.** As of v1.2 hash-lock: Pilot 1A corpus is on disk (24,179 arXiv records, S2-enriched, stratified to 500, blinded), 68,021 citations pulled, composite Impact computed. **No LLM predictions, no model inferences against the blinded corpus, no execution of either §5.1.A or §5.1.B test, no comparison of any predictor against Impact_primary or Impact_sensitivity has occurred.** The revision is informed by descriptive properties of the measurement instrument only.
+
+**Author judgment on §0 conformance.** The §0 protection is against post-hoc adjustment driven by predictive results. Phase 1 measurements are descriptive of the measurement instrument, not predictive of test outcomes. This judgment-call interpretation is documented at length in `DECISIONS.md` D-007 with explicit reasoning trace and acknowledgment that it stretches §0 condition 1's literal wording. Future revisions invoking the same distinction must justify the same way.
+
+**Verification.** v1.0 hash-locked at `prereg-v1.0` (commit 613c0be), SHA-256 `dbc74374...`. v1.1 hash-locked at `prereg-v1.1` (commit 2765401), SHA-256 `382a7a46...`. v1.2 hash recorded in `HASH.md` after this commit. All three preserved in git history with their original tags and OpenTimestamps proofs.
+
+---
+
 ## Convention for future entries
 
 If a subsequent pre-data revision becomes necessary, append a new `v1.x → v1.y` section here following the same structure: trigger, list of changes by section, data-collection attestation, verification pointers to prior version, and author judgment about conformance with §0. After data collection begins, no further revisions occur — design changes become deviations in `DEVIATIONS.md`.
