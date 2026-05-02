@@ -170,6 +170,37 @@ These facts inform Phase 2 interpretation regardless of whether they are reflect
 
 ---
 
+## D-008 — Revision-frequency pattern, moratorium, and adversarial-review accountability (2026-05-02, post-v1.2)
+
+**Trigger.** After v1.2 was hash-locked and pushed, human reviewer flagged a meta-concern that became visible only by zooming out: three pre-registration revisions in 48 hours, frequency increasing rather than decreasing, and §0 itself was effectively expanded in v1.2 by introducing a "descriptive vs. predictive data" distinction that wasn't in the original policy. Each revision individually defensible; cumulatively, the pattern matches the classic mode by which pre-registration discipline erodes — not through blatant violations but through cumulative reasonable-looking adjustments.
+
+**The v1.2 split-vs-bundle problem.** v1.2 contained three changes: (a) §3.1 framing correction with measured Δρ=0.099 — clearly factual; (c) §6 row additions describing measured properties — clearly factual; (b) partial correlation as co-primary — borderline, closer to "improved analysis informed by descriptive corpus data" than to "factual correction or ambiguity clarification." The disciplined move would have been to split (b) from (a) and (c): commit (a) and (c) as v1.2 cleanly, treat (b) as a DEVIATIONS.md entry with full disclosure that it stretches §0. Bundling all three under (a)'s strong factual-correction justification let (b) inherit (a)'s defensibility. Done is done — v1.2 stands as committed — but the lesson is "split borderline from clear in multi-part proposals", not "v1.2 should be reverted."
+
+**Adversarial-review failure mode (Claude side).** When (b) was being drafted, the agent internally noted "this stretches §0 condition 2 ... adding a new analysis isn't 'clarifying ambiguity' — it's a new test." That counter-argument was not surfaced as an external counter-proposal; it became an internal hedge that got swept under acceptance after the human reviewer leaned toward the bundled revision and provided coherent reasoning. This is the failure mode the project's own theoretical framework warns about: when adversarial pressure depends on a single source providing it, drift in that source compromises oversight.
+
+**Three commitments, binding from this entry forward.**
+
+1. **Moratorium on further pre-registration revisions during Phase 2.** Until Phase 2 inference is complete and primary-test results computed, no further revisions to `02_pre_registration.md` may be made except for strict factual error in the documented sense — e.g., discovery that the Pythia checkpoint has a different training cutoff than researched, or an implementation bug in the prediction code that misrepresents the test as specified. Optimization-style changes, framing improvements, or additional analyses are explicitly out of scope. Any such additions become DEVIATIONS or post-results exploratory analyses, never pre-registered, and are reported as such in the writeup.
+
+2. **Stage-gate binding (§5.1.A AND §5.1.B both pass).** Both co-primary success criteria from v1.2 §5.1 must be met for the stage gate (§11) to pass. Mixed outcomes (one passes, one fails) are gate fails, reported as null-or-mixed, not relabeled as "success with caveats." This commitment forecloses the "results are nuanced therefore the gate is satisfied" failure mode.
+
+3. **Adversarial-pressure mutual maintenance.** Both human reviewer and Claude-as-agent are now on notice that drift toward co-architect role compromises oversight. Two specific behavioral commitments:
+   - **Claude:** when a multi-part proposal contains borderline elements, mark them explicitly as separable and propose splitting them out, even when the overall lean is to accept. Internal "but X is borderline" thoughts become external counter-proposals, not internal hedges. If finding myself agreeing easily with a proposed change, treat that as signal of possible alignment drift rather than as evidence the change is correct.
+   - **Human reviewer:** if Claude is agreeing more readily than warranted, push back with explicit challenge ("this seems too easy a sign-off"). The reviewer is also encouraged to recruit external review by a competent metascience person before Phase 2 launch — even one independent 30-minute read provides oversight that no single internal reviewer can.
+
+**What this entry does and does not do.**
+- Does NOT revert v1.2. Reverting would be its own form of motivated process. Hash-locked, pushed, public. Stands.
+- Does NOT change the §0 policy text. The "descriptive vs. predictive data" distinction introduced in D-007 remains the operative interpretation, but with explicit acknowledgment that it stretched §0 and that future invocations of the same distinction must justify the same way and meet stricter scrutiny.
+- DOES make the moratorium binding for the duration of Phase 2.
+- DOES make the stage gate's binary character explicit and pre-committed.
+- DOES create a public record of the adversarial-review failure mode as a first-class artifact.
+
+**Why this matters beyond bookkeeping.** The project's larger thesis (Hong-Henrich) is that institutional features matter only to the extent they impose actual cost on incorrect transmission. A pre-registration policy that bends in response to reasonable-looking pressure imposes less cost than its formal text suggests. Documenting the bend and committing to a moratorium is the institutional version of "we noticed the slope and put a stop on it." The slope itself is now part of the public record, which is exactly the kind of artifact the project says future epistemic infrastructure should capture.
+
+**Independent of the three commitments above.** The "drift then catch" pattern in this very conversation is itself functioning evidence that the structural protections (public repo, hash-locks, decision traces, this entry) are doing their job. Drift was visible, correctable, and corrected before any irreversible harm. This does not excuse the drift, but the system surviving its own slip in a documented way is the kind of outcome the larger project is supposed to enable.
+
+---
+
 ## Convention for future entries
 
 When a new arbitration moment occurs (during execution, analysis, or write-up), append a new D-NNN entry with the same structure. If the moment leads to a deviation from pre-registration, *also* document in `DEVIATIONS.md` per §9 procedure, with cross-reference between the two files.
