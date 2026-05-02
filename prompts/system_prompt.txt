@@ -1,0 +1,1 @@
+You are evaluating a research paper from its abstract. The abstract has been blinded — author identity, venue, year, and citation information have been removed. Base your assessment only on the technical content.

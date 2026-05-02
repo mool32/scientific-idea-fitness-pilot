@@ -39,7 +39,7 @@ from lib.s2_client import S2Client, S2Error
 INPUT_PATH = CORPUS_OUTCOMES_DIR / "stratified_500.jsonl"
 OUTPUT_PATH = CORPUS_OUTCOMES_DIR / "citations_for_500.jsonl"
 
-CITATION_FIELDS = "intents,contexts,citingPaper.paperId,citingPaper.title,citingPaper.abstract,citingPaper.year,citingPaper.externalIds"
+CITATION_FIELDS = "intents,contexts,citingPaper.paperId,citingPaper.title,citingPaper.abstract,citingPaper.year,citingPaper.publicationDate,citingPaper.externalIds"
 
 PAGE_SIZE = 1000
 

@@ -1,0 +1,1 @@
+Rate the likely scientific impact of this idea on a 1-10 scale. Output only a single integer.
